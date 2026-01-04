@@ -1,7 +1,7 @@
 package part2dataframes
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, column, expr}
+import org.apache.spark.sql.functions.{col, column, expr, lower}
 
 object ColumnsAndExpressions extends App {
   val spark = SparkSession.builder()
@@ -81,5 +81,38 @@ object ColumnsAndExpressions extends App {
   // distinct
   val allCountriesDF = carsDf.select("Origin").distinct()
   allCountriesDF.show()
+
+  /**
+   * Exercises
+   *
+   * 1. Read the movies df and select 2 columns of your choice
+   * 2. Create another column summing up the total profit of movies = us_gross + worldwide_gross + dvd_sales
+   * 3. Select all movies are comedies in Major_Genre, with a IMDB rating above 6
+   *
+   * Use as many versions as possible (nah cba)
+   */
+
+  // Exercise 1
+  val moviesDf = spark.read
+    .option("inferSchema", "true")
+    .json("src/main/resources/data/movies.json")
+
+  moviesDf.printSchema()
+  val moviesSelectedDf = moviesDf.select("Title", "Director")
+  moviesSelectedDf.show()
+  println("Movie df with 2 cols selected")
+
+  // Exercise 2
+  val moviesWithTotalProfit = moviesDf.withColumn(
+    "total_profit",
+    col("US_Gross") + col("Worldwide_Gross")
+  )
+  moviesWithTotalProfit.select("Title", "US_Gross", "total_profit").show()
+  println("Movie df with total_profit column")
+
+  // Exercise 3
+  val moviesFilteredGoodComedies = moviesDf.filter(lower(col("Major_Genre")) === "comedy" and col("IMDB_Rating") > 6)
+  moviesFilteredGoodComedies.show()
+  println("Movie df filtered to show only good comedies")
 
 }
