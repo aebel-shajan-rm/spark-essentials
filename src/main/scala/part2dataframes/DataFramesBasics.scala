@@ -1,7 +1,7 @@
 package part2dataframes
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{DoubleType, LongType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{DoubleType, IntegerType, LongType, StringType, StructField, StructType}
 
 object DataFramesBasics extends App {
 
@@ -88,6 +88,39 @@ object DataFramesBasics extends App {
   manualCarsDF.printSchema()
   manualCarsDFWithImplicits.printSchema()
 
+  /**
+   * Exercise:
+   * 1) Create a manual DF describing smartphones
+   *  - make
+   *  - model
+   *  - screen dimensions
+   *  - camera mega pixels
+   * 2) Read another file from data folder (e.g. movies json)
+   *  - print its schema
+   *  - count number of rows with cound
+   */
+  println("Exercises__________________")
+  // Exercise 1
+  val smartphones = Seq(
+    ("iphone", "11", 4.0, 12.0, 25),
+    ("samsung", "s7 edge", 3.0, 12.0, 25),
+    ("pixel", "8 pro", 4.0, 13.0, 25)
+  )
+  val manualSmartphonesDf = spark.createDataFrame(smartphones)
+  manualSmartphonesDf.show()
 
+  // Exercise 2
+//  val moviesSchema = StructType(
+//    StructField("Title", StringType),
+//    StructField("US_Gross", IntegerType),
+//    StructField("Worldwide_Gross", IntegerType),
+//    StructField("US_DVD_Sales", IntegerType),
+//
+//  )
+  val moviesDf = spark.read
+    .format("json")
+    .option("inferSchema", "true")
+    .load("src/main/resources/data/movies.json")
+  moviesDf.show()
 
 }
