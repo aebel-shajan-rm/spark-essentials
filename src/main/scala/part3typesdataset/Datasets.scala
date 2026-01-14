@@ -1,6 +1,6 @@
 package part3typesdataset
 
-import org.apache.spark.sql.{Dataset, Encoders, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, Encoders, SparkSession}
 import org.apache.spark.sql.functions._
 
 case class Car(
@@ -23,7 +23,7 @@ object Datasets extends App {
     .getOrCreate()
 
 
-  val numbersDf = spark.read
+  val numbersDf: DataFrame = spark.read
     .format("csv")
     .option("header", "true")
     .option("inferSchema", "true")
@@ -79,7 +79,58 @@ object Datasets extends App {
   val cumHp = carsDs.map(car => car.Horsepower.getOrElse(0L)).reduce((horsepower, total) => total + horsepower)
     println(count, filteredCount, cumHp/count)
 
-  carsDs.select(avg("Horsepower")).show()
+  // Joins
+  case class Guitar(
+                   id: Long,
+                   make: String,
+                   model: String,
+                   guitarType: String
+                   )
+
+  case class GuitarPlayer(
+                         id: Long,
+                         name: String,
+                         guitars: Seq[Long],
+                         band: Long
+                         )
+  case class Band(
+                 id: Long,
+                 name: String,
+                 hometown: String,
+                 year: Long
+                 )
+
+  val guitarsDs = readDf("guitars.json").as[Guitar]
+  val guitarPlayersDs = readDf("guitarPlayers.json").as[GuitarPlayer]
+  val bandsDs = readDf("bands.json").as[Band]
+
+  val guitarPlayerBandsDS: Dataset[(GuitarPlayer, Band)]= guitarPlayersDs.joinWith(
+    bandsDs,
+    guitarPlayersDs.col("band") === bandsDs.col("id"),
+    "inner"
+  )
+  guitarPlayerBandsDS.show
+
+  /**
+   * Exercise:
+   * 1. join the guitarsDs and guitarPlayerDs, is an outer join
+   * (hint: use array_contains)
+   */
+
+  val playerGuitarsDs = guitarsDs.joinWith(
+    guitarPlayersDs,
+    array_contains(guitarPlayersDs.col("guitars"), guitarsDs.col("id")),
+    "outer"
+  )
+  playerGuitarsDs.show()
+
+  // Grouping
+  val carsGroupedByOrigin = carsDs
+    .groupByKey(_.Origin)
+    .count()
+  carsGroupedByOrigin.show
+
+  // joins and groups are wide transformations. can change the number of partitions. will involve shuffling operations
 }
 
 
